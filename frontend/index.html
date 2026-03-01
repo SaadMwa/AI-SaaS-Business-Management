@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Business Management SaaS</title>
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem("theme");
+          var systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+          var theme = stored === "light" || stored === "dark" || stored === "system" ? stored : "system";
+          var resolved = theme === "system" ? (systemDark ? "dark" : "light") : theme;
+          document.documentElement.classList.add(resolved);
+          document.documentElement.setAttribute("data-theme", resolved);
+        } catch (e) {
+          // ignore theme bootstrap errors
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

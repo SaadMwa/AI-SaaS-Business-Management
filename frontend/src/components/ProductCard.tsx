@@ -1,20 +1,17 @@
 import { motion } from "framer-motion";
+import { Product } from "../services/product.service";
 
 type ProductCardProps = {
-  product: {
-    id: string;
-    name: string;
-    price: number;
-    image_url: string;
-    stock_label: string;
-    stock_quantity: number;
-    key_feature?: string;
-    match_reason?: string;
-  };
+  product: Product;  // ✅ Use the actual Product type
   onAddToCart: () => void;
 };
 
 export default function ProductCard({ product, onAddToCart }: ProductCardProps) {
+  // Create stock_label from stock_quantity if needed
+  const stockLabel = product.stock_quantity > 0 
+    ? `${product.stock_quantity} in stock` 
+    : "Out of stock";
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
@@ -27,18 +24,13 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold text-foreground">{product.name}</p>
           <p className="text-xs text-muted-foreground">
-            ${product.price.toFixed(2)} | {product.stock_label}
+            ${product.price.toFixed(2)} | {stockLabel}
           </p>
           <div className="mt-1 flex flex-wrap gap-1">
             {product.top_selling ? <span className="badge badge-success">Top Seller</span> : null}
             {product.is_recommended ? <span className="badge badge-info">Recommended</span> : null}
           </div>
-          {product.key_feature ? (
-            <p className="mt-1 text-xs text-muted-foreground">Key: {product.key_feature}</p>
-          ) : null}
-          {product.match_reason ? (
-            <p className="mt-1 text-[11px] text-muted">{product.match_reason}</p>
-          ) : null}
+          {/* Remove key_feature and match_reason if they don't exist in Product */}
           <button
             className="mt-1 rounded-md border border-border px-2 py-1 text-xs hover:border-primary hover:text-primary"
             onClick={onAddToCart}

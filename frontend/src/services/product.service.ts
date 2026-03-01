@@ -11,6 +11,7 @@ export interface Product {
   is_recommended?: boolean;
   popularity_score?: number;
   top_selling?: boolean;
+  
   store_id: string;
   featured?: boolean;
   low_stock?: boolean;

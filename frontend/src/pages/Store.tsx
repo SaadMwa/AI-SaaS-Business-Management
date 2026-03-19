@@ -6,6 +6,7 @@ import { resolveApiBaseUrl } from "../config/env";
 import Modal from "../components/Modal";
 import { useTheme } from "../context/theme.context";
 import { motion } from "framer-motion";
+import { useAuth } from "../hooks/useAuth";
 import ChatUI from "../components/ChatUI";
 import ProductCard from "../components/ProductCard";
 
@@ -130,6 +131,7 @@ export default function StorePage() {
   const [messages, setMessages] = useState<ChatMessage[]>([defaultWelcome]);
   const [inputFocused, setInputFocused] = useState(false);
   const [searchParams] = useSearchParams();
+  const { user } = useAuth();
   const chatScrollRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -168,7 +170,11 @@ export default function StorePage() {
   useEffect(() => {
     const load = async () => {
       try {
-        const result = await productService.list();
+        const storeIdFromQuery =
+          searchParams.get("store_id") || searchParams.get("store") || undefined;
+        const result = await productService.list({
+          store_id: storeIdFromQuery || user?.store_id || undefined,
+        });
         setProducts(result.products || []);
         setFeaturedProducts(result.featuredProducts || []);
         setBestSellers(result.bestSellers || []);
@@ -182,7 +188,7 @@ export default function StorePage() {
       }
     };
     void load();
-  }, []);
+  }, [searchParams, user?.store_id]);
 
   useEffect(() => {
     const productId = searchParams.get("product");

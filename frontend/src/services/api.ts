@@ -1,47 +1,92 @@
-import axios from "axios";
-import { resolveApiBaseUrl } from "../config/env";
+import axios, { type AxiosInstance } from "axios";
+import { resolveAiBaseUrl, resolveApiBaseUrl } from "../config/env";
 
 const TOKEN_KEY = "auth_token";
 
-export const api = axios.create({
-  // Base URL points to your backend /api prefix.
-  baseURL: resolveApiBaseUrl(),
-  withCredentials: true,
-});
+const apiBaseUrl = resolveApiBaseUrl();
+const aiBaseUrl = resolveAiBaseUrl();
 
-const dispatchApiErrorToast = (message: string) => {
+const dispatchLoading = (pending: number) => {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(
+    new CustomEvent("app:loading", {
+      detail: { pending },
+    })
+  );
+};
+
+const normalizeMessage = (value: unknown) => {
+  if (typeof value === "string") return value;
+  if (value instanceof Error) return value.message;
+  if (value && typeof value === "object") {
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return "Unexpected error";
+    }
+  }
+  return "Unexpected error";
+};
+
+const dispatchApiErrorToast = (message: unknown) => {
   if (typeof window === "undefined") return;
   window.dispatchEvent(
     new CustomEvent("app:toast", {
       detail: {
         type: "error",
-        message,
+        message: normalizeMessage(message),
       },
     })
   );
 };
 
-// Attach JWT to every request if present.
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem(TOKEN_KEY);
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
+const attachInterceptors = (client: AxiosInstance) => {
+  let pendingRequests = 0;
+
+  client.interceptors.request.use((config) => {
+    pendingRequests += 1;
+    dispatchLoading(pendingRequests);
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  });
+
+  client.interceptors.response.use(
+    (response) => {
+      pendingRequests = Math.max(0, pendingRequests - 1);
+      dispatchLoading(pendingRequests);
+      return response;
+    },
+    (error) => {
+      pendingRequests = Math.max(0, pendingRequests - 1);
+      dispatchLoading(pendingRequests);
+      const message =
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message ||
+        "Unexpected error";
+      dispatchApiErrorToast(message);
+      return Promise.reject(error);
+    }
+  );
+};
+
+export const api = axios.create({
+  // Base URL points to your backend /api prefix.
+  baseURL: apiBaseUrl,
+  withCredentials: true,
 });
 
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    const message =
-      error?.response?.data?.message ||
-      error?.response?.data?.error ||
-      error?.message ||
-      "Unexpected error";
-    dispatchApiErrorToast(message);
-    return Promise.reject(error);
-  }
-);
+export const aiApi = axios.create({
+  // Base URL points to your backend /api/ai prefix.
+  baseURL: aiBaseUrl,
+  withCredentials: true,
+});
+
+attachInterceptors(api);
+attachInterceptors(aiApi);
 
 export const authStorage = {
   getToken: () => localStorage.getItem(TOKEN_KEY),
@@ -49,13 +94,18 @@ export const authStorage = {
   clearToken: () => localStorage.removeItem(TOKEN_KEY),
 };
 
+export const apiUrls = {
+  apiBaseUrl,
+  aiBaseUrl,
+};
+
 export const getErrorMessage = (error: unknown) => {
   if (axios.isAxiosError(error)) {
-    return (
+    const candidate =
       error.response?.data?.message ||
       error.response?.data?.error ||
-      error.message
-    );
+      error.message;
+    return normalizeMessage(candidate);
   }
-  return "Unexpected error";
+  return normalizeMessage(error);
 };

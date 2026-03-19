@@ -39,13 +39,13 @@ type ProductPayload = {
 };
 
 export const productService = {
-  list: async (query?: string) => {
+  list: async (params?: { q?: string; store_id?: string }) => {
     const { data } = await api.get<{ success: boolean } & ProductCatalogResponse>("/products", {
-      params: query ? { q: query } : undefined,
+      params,
     });
     return data;
   },
-  recommendations: async (params?: { q?: string; productId?: string }) => {
+  recommendations: async (params?: { q?: string; productId?: string; store_id?: string }) => {
     const { data } = await api.get<{
       success: boolean;
       seedProductId: string | null;

@@ -1,9 +1,9 @@
-import { api } from "./api";
+import { aiApi } from "./api";
 import { AiGuide } from "../types";
 
 export const aiHelpService = {
   getGuide: async () => {
-    const { data } = await api.get<{ success: boolean; guide: AiGuide }>("/ai/help");
+    const { data } = await aiApi.get<{ success: boolean; guide: AiGuide }>("/help");
     return data.guide;
   },
 };

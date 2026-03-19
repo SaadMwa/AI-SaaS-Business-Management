@@ -1,4 +1,4 @@
-const getEnvValue = (key: "VITE_API_URL") => {
+const getEnvValue = (key: "VITE_API_URL" | "VITE_AI_URL") => {
   const value = (import.meta.env as Record<string, string | undefined>)[key];
   return typeof value === "string" ? value.trim() : "";
 };
@@ -10,4 +10,10 @@ export const resolveApiBaseUrl = () => {
     return `${window.location.origin}/api`;
   }
   return "/api";
+};
+
+export const resolveAiBaseUrl = () => {
+  const explicit = getEnvValue("VITE_AI_URL");
+  if (explicit) return explicit.replace(/\/$/, "");
+  return `${resolveApiBaseUrl()}/ai`;
 };
